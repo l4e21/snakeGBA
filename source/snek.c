@@ -4,6 +4,8 @@
 
 #define CBB_0  0
 #define SBB_0 28
+#define CBB_1  1
+#define SBB_1 31
 
 enum __DIRECTION {Left, Down, Up, Right};
 
@@ -41,9 +43,12 @@ SCR_ENTRY *bg0_map= se_mem[SBB_0];
 
 void init_map() {
   // initialize a background
-  REG_BG0CNT= BG_CBB(CBB_0) | BG_SBB(SBB_0) | BG_REG_64x64;
+  REG_BG0CNT= BG_CBB(CBB_0) | BG_SBB(SBB_0) | BG_REG_64x64 | 1;
   REG_BG0HOFS= 0;
   REG_BG0VOFS= 0;
+  REG_BG1CNT= BG_CBB(CBB_1) | BG_SBB(SBB_1) | BG_REG_64x64 | 0; // Last part sets priority
+  REG_BG1HOFS= 0;
+  REG_BG1VOFS= 0;
 
   // create the tiles: basic tile and a cross
   const TILE tiles[3]=
@@ -221,6 +226,12 @@ void draw_food(Food* food) {
 
 int play_game(Snake* snake, Food* food, int highScore) {
   int score = 0;
+  char scoreBuffer[20]; // Buffer to hold the formatted string
+  sprintf(scoreBuffer, "Score: %d", score);
+      
+  char highScoreBuffer[30]; // Buffer to hold the formatted string
+  sprintf(highScoreBuffer, "High Score: %d", highScore);
+  
   float speed = 1.0;
   Direction direction = Right;
 
@@ -232,6 +243,11 @@ int play_game(Snake* snake, Food* food, int highScore) {
   while (1) {
     vid_vsync();
     key_poll();
+    
+    tte_write("#{P:0,0}");        // Goto (72, 64).
+    tte_write(scoreBuffer);      // Print "Hello world!"
+    tte_write("#{P:0,8}");        // Goto (72, 64).
+    tte_write(highScoreBuffer);      // Print "Hello world!"
 
     if (score > highScore) {
       pal_bg_bank[0][1]= RGB15(0,  31,  0);
@@ -286,6 +302,12 @@ int play_game(Snake* snake, Food* food, int highScore) {
 
       if ((food->posX == snake->posX) && (food->posY == snake->posY)) {
 	score++;
+	sprintf(scoreBuffer, "Score: %d", score);
+
+	if (score > highScore) {
+	sprintf(highScoreBuffer, "High Score: %d", score);
+	};
+
 	speed = speed + 0.035*speed;
 	undraw_food(food);
 	init_food(food, snake);
@@ -312,12 +334,17 @@ int play_game(Snake* snake, Food* food, int highScore) {
 
 int main() {
   init_map();
-  REG_DISPCNT= DCNT_MODE0 | DCNT_BG0 | DCNT_OBJ;
+  tte_init_con();
+
+  tte_init_se_default(1, BG_CBB(CBB_1)|BG_SBB(SBB_1));
+  
+  REG_DISPCNT= DCNT_MODE0 | DCNT_BG0 | DCNT_BG1 | DCNT_OBJ;
 
   int score = 0;
   
   // Write something
  while(1) {
+   
     Snake snake = {0};
     init_snake(&snake);
     
