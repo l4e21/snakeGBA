@@ -5,6 +5,10 @@
 #define CBB_0  0
 #define SBB_0 28
 
+enum __DIRECTION {Left, Down, Up, Right};
+
+typedef enum __DIRECTION Direction;
+
 struct __TAIL {
   int* xs;
   int* ys;
@@ -132,14 +136,42 @@ void undraw_snake(Snake* snake) {
   undraw_tail(&snake->tail);
 };
 
-void destroy_snake(Snake* snake) {
-  undraw_snake(snake);
-  destroy_tail(&snake->tail);
-};
-
 void draw_snake(Snake* snake) {
   bg0_map[se_by_position(snake->posX, snake->posY)] = SE_PALBANK(0) | 2;
   draw_tail(&snake->tail);
+};
+
+int change_snake_direction(Snake* snake, Direction dir) {
+      if (dir == Right) {
+	snake->directionX = 1;
+	snake->directionY = 0;
+      }
+
+      else if (dir == Left) {
+	snake->directionX = -1;
+	snake->directionY = 0;
+      }
+
+      else if (dir == Up) {
+	snake->directionX = 0;
+	snake->directionY = -1;
+      }
+
+      else if (dir == Down) {
+	snake->directionX = 0;
+	snake->directionY = 1;
+      }
+
+      else {
+	return 1;
+      };
+
+      return 0;
+}
+
+void destroy_snake(Snake* snake) {
+  undraw_snake(snake);
+  destroy_tail(&snake->tail);
 };
 
 int snake_collides_self(Snake* snake) {
@@ -190,6 +222,7 @@ void draw_food(Food* food) {
 int play_game(Snake* snake, Food* food, int highScore) {
   int score = 0;
   float speed = 1.0;
+  Direction direction = Right;
 
   draw_food(food);
   draw_snake(snake);
@@ -207,34 +240,33 @@ int play_game(Snake* snake, Food* food, int highScore) {
 
     // Change snake direction
     if (key_is_down(KEY_DOWN)) {
-      if (snake->directionY != -1) { 
-	  snake->directionX = 0;
-	  snake->directionY = 1;
-	};
+      if (snake->directionY != -1) {
+	direction = Down;
+      };
     }
 
     else if (key_is_down(KEY_RIGHT)) {
       if (snake->directionX != -1) {
-	snake->directionX = 1;
-	snake->directionY = 0;
+	direction = Right;
       };
     }
 
     else if (key_is_down(KEY_LEFT)) {
       if (snake->directionX != 1) {
-	snake->directionX = -1;
-	snake->directionY = 0;
+	direction = Left;
       }
     }
 
     else if (key_is_down(KEY_UP)) {
       if (snake->directionY != 1) {
-	snake->directionX = 0;
-	snake->directionY = -1;
+	direction = Up;
       }
     };
 
     if(t > 14.0 ) {
+      
+      change_snake_direction(snake, direction);
+      
       if (snake_collides_self(snake)) {
 	return score;
       };
