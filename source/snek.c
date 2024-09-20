@@ -187,15 +187,23 @@ void draw_food(Food* food) {
 };
 
 
-int play_game(Snake* snake, Food* food) {
+int play_game(Snake* snake, Food* food, int highScore) {
+  int score = 0;
+  float speed = 1.0;
+
   draw_food(food);
   draw_snake(snake);
   
-  int t = 1;
+  float t = 1;
   
   while (1) {
     vid_vsync();
     key_poll();
+
+    if (score > highScore) {
+      pal_bg_bank[0][1]= RGB15(0,  31,  0);
+    };
+
 
     // Change snake direction
     if (key_is_down(KEY_DOWN)) {
@@ -226,14 +234,14 @@ int play_game(Snake* snake, Food* food) {
       }
     };
 
-    if(t % 12 == 0) {
+    if(t > 14.0 ) {
       if (snake_collides_self(snake)) {
-	return 1;
+	return score;
       };
 
       // Out of Bounds
       if ((snake->posX >= 30) | (snake->posX < 0) | (snake->posY >= 20) | (snake->posY < 0)) {
-	return 1;
+	return score;
       };
 
       // Undraw snake
@@ -245,6 +253,8 @@ int play_game(Snake* snake, Food* food) {
       snake->posY += snake->directionY;
 
       if ((food->posX == snake->posX) && (food->posY == snake->posY)) {
+	score++;
+	speed = speed + 0.035*speed;
 	undraw_food(food);
 	init_food(food, snake);
 	draw_food(food);
@@ -254,31 +264,39 @@ int play_game(Snake* snake, Food* food) {
       // Redraw snake
       draw_snake(snake);
 
+      t = 1.0;
+    }
+    
+    else {
+      t += speed;
     };
 
     REG_BG_OFS[0]= bg0_pt;	// write new position
     
-    t++;
   };
 
-  return 1;
+  return 0;
 }
 
 int main() {
   init_map();
   REG_DISPCNT= DCNT_MODE0 | DCNT_BG0 | DCNT_OBJ;
 
-  while(1) {
+  int score = 0;
+  
+  // Write something
+ while(1) {
     Snake snake = {0};
     init_snake(&snake);
     
     Food food = {0};
     init_food(&food, &snake);
     
-    play_game(&snake, &food);
+    score = play_game(&snake, &food, score);
 
     destroy_snake(&snake);
     undraw_food(&food);
+    pal_bg_bank[0][1]= RGB15(31,  0,  0);
   }
 
   return 0;
