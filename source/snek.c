@@ -300,6 +300,7 @@ int play_game(Snake* snake, Food* food, int highScore) {
       snake->posX += snake->directionX;
       snake->posY += snake->directionY;
 
+      // Picks up food
       if ((food->posX == snake->posX) && (food->posY == snake->posY)) {
 	score++;
 	sprintf(scoreBuffer, "Score: %d", score);
@@ -308,6 +309,9 @@ int play_game(Snake* snake, Food* food, int highScore) {
 	sprintf(highScoreBuffer, "High Score: %d", score);
 	};
 
+	// Play note
+	REG_SND1FREQ = SFREQ_RESET | SND_RATE(NOTE_G, 0);
+	
 	speed = speed + 0.035*speed;
 	undraw_food(food);
 	init_food(food, snake);
@@ -340,6 +344,18 @@ int main() {
   
   REG_DISPCNT= DCNT_MODE0 | DCNT_BG0 | DCNT_BG1 | DCNT_OBJ;
 
+  REG_SNDSTAT= SSTAT_ENABLE;
+  // snd1 on left/right ; both full volume
+  REG_SNDDMGCNT = SDMG_BUILD_LR(SDMG_SQR1, 7);
+  // DMG ratio to 100%
+  REG_SNDDSCNT= SDS_DMG100;
+
+  // no sweep
+  REG_SND1SWEEP= SSW_OFF;
+  // envelope: vol=12, decay, max step time (7) ; 50% duty
+  REG_SND1CNT= SSQR_ENV_BUILD(8, 0, 5) | SSQR_DUTY1_2;
+  REG_SND1FREQ= 0;
+    
   int score = 0;
   
   // Write something
