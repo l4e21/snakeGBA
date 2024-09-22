@@ -1,6 +1,6 @@
 #include <tonc.h>
 #include <stdlib.h>
-
+#include <string.h>
 
 #define CBB_0  0
 #define SBB_0 28
@@ -225,6 +225,7 @@ void draw_food(Food* food) {
 
 
 int play_game(Snake* snake, Food* food, int highScore) {
+  int speedMod = 1;
   int score = 0;
   char scoreBuffer[20]; // Buffer to hold the formatted string
   sprintf(scoreBuffer, "Score: %d", score);
@@ -279,16 +280,25 @@ int play_game(Snake* snake, Food* food, int highScore) {
       }
     };
 
+    if (key_is_down(KEY_A)) {
+      speedMod = 2;
+    }
+    else {
+      speedMod = 1;
+    }
+    
     if(t > 14.0 ) {
       
       change_snake_direction(snake, direction);
       
       if (snake_collides_self(snake)) {
+	scoreBuffer[0] = '\0';
 	return score;
       };
 
       // Out of Bounds
       if ((snake->posX >= 30) | (snake->posX < 0) | (snake->posY >= 20) | (snake->posY < 0)) {
+	scoreBuffer[0] = '\0';
 	return score;
       };
 
@@ -326,7 +336,7 @@ int play_game(Snake* snake, Food* food, int highScore) {
     }
     
     else {
-      t += speed;
+      t += (speed * speedMod);
     };
 
     REG_BG_OFS[0]= bg0_pt;	// write new position
@@ -356,7 +366,7 @@ int main() {
   REG_SND1CNT= SSQR_ENV_BUILD(8, 0, 5) | SSQR_DUTY1_2;
   REG_SND1FREQ= 0;
     
-  int score = 0;
+  int highScore = 0;
   
   // Write something
  while(1) {
@@ -366,8 +376,13 @@ int main() {
     
     Food food = {0};
     init_food(&food, &snake);
+
     
-    score = play_game(&snake, &food, score);
+    int score = play_game(&snake, &food, highScore);
+
+    if (score > highScore) {
+      highScore = score;
+    }
 
     destroy_snake(&snake);
     undraw_food(&food);
